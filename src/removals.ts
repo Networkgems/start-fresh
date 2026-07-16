@@ -7,7 +7,19 @@
 
 import { randomUUID } from "node:crypto";
 import { store } from "./store.js";
-import type { FindingCategory, Removal, RemovalStatus, Report } from "./types.js";
+import { resolveImageTakedown } from "./reputation/images.js";
+import { socialDisconnectFor } from "./reputation/social.js";
+import { brokerById } from "./reputation/brokers.js";
+import { buildOptOutRequest } from "./reputation/optout.js";
+import type {
+  DisconnectGuidance,
+  FindingCategory,
+  OptOutRequest,
+  Removal,
+  RemovalStatus,
+  Report,
+  TakedownRequest,
+} from "./types.js";
 
 // Sanctioned channel description per category (what a user is told we use).
 const CHANNEL: Record<FindingCategory, string> = {
@@ -40,13 +52,43 @@ export function deriveRemovals(report: Report): Removal[] {
   const created: Removal[] = [];
   for (const f of report.findings) {
     if (!f.removable) continue;
+    // Image findings get a per-host takedown request routed to the correct
+    // sanctioned channel (STA-6); the channel label reflects that specific
+    // route rather than the generic category default.
+    let takedown: TakedownRequest | undefined;
+    let guidance: DisconnectGuidance | undefined;
+    let optOut: OptOutRequest | undefined;
+    let channel = CHANNEL[f.category];
+    if (f.category === "image") {
+      takedown = resolveImageTakedown(f, report.subjectName);
+      channel = takedown.channel;
+    } else if (f.category === "social") {
+      // Social findings become a tracked disconnect action with platform-specific
+      // guided steps and links to the platform's published self-service controls
+      // (STA-7). The channel label reflects the specific platform.
+      const disconnect = socialDisconnectFor(f);
+      channel = disconnect.channel;
+      guidance = disconnect.guidance;
+    } else if (f.category === "data_broker") {
+      // Data-broker findings become a templated, ready-to-submit opt-out request
+      // routed to the broker's own published channel (STA-5). The channel label
+      // names the broker + method the request is prepared for.
+      const broker = f.brokerId ? brokerById(f.brokerId) : undefined;
+      if (broker) {
+        optOut = buildOptOutRequest(broker, report.subjectName, f.url);
+        channel = `${broker.name} opt-out (${optOut.method === "email" ? "email" : "web form"})`;
+      }
+    }
     const removal: Removal = {
       id: randomUUID(),
       caseId: report.caseId,
       findingId: f.id,
       category: f.category,
       target: f.title,
-      channel: CHANNEL[f.category],
+      channel,
+      ...(optOut ? { optOut } : {}),
+      ...(takedown ? { takedown } : {}),
+      ...(guidance ? { guidance } : {}),
       status: "pending",
       history: [{ at: now, status: "pending", note: NOTE.pending }],
       createdAt: now,

@@ -26,6 +26,11 @@ import {
   type OpenWebContext,
   type WebSearchClient,
 } from "./reputation/search.js";
+import {
+  reverseImageClientFromEnv,
+  reverseImageFindings,
+  type ReverseImageClient,
+} from "./reputation/images.js";
 import type { Finding, FindingCategory, Report, Severity } from "./types.js";
 
 export interface GenerateReportOptions {
@@ -33,6 +38,13 @@ export interface GenerateReportOptions {
   searchClient?: WebSearchClient | null;
   /** Optional disambiguators to sharpen open-web queries. */
   context?: OpenWebContext;
+  /**
+   * User-provided source image for reverse-image lookup (STA-6). Only used when
+   * a permitted reverse-image client is available; otherwise ignored.
+   */
+  sourceImageUrl?: string;
+  /** Injectable for tests; defaults to the env-configured client (or none). */
+  reverseImageClient?: ReverseImageClient | null;
 }
 
 /**
@@ -49,13 +61,18 @@ export async function generateReport(
   const name = subjectName.trim();
   const searchClient =
     opts.searchClient !== undefined ? opts.searchClient : searchClientFromEnv();
+  const reverseImageClient =
+    opts.reverseImageClient !== undefined
+      ? opts.reverseImageClient
+      : reverseImageClientFromEnv();
 
-  const [brokerFindings, openWebFindings] = await Promise.all([
+  const [brokerFindings, openWebFindings, reverseFindings] = await Promise.all([
     Promise.resolve(brokerFindingsFor(name)),
     scanOpenWeb(searchClient, name, opts.context ?? {}),
+    reverseImageFindings(reverseImageClient, name, opts.sourceImageUrl),
   ]);
 
-  const findings = [...brokerFindings, ...openWebFindings];
+  const findings = [...brokerFindings, ...openWebFindings, ...reverseFindings];
   const score = scoreFromFindings(findings);
   const openWebScanned = searchClient !== null;
 
@@ -84,6 +101,7 @@ function brokerFindingsFor(name: string): Finding[] {
       id: randomUUID(),
       category: "data_broker" as const,
       source: broker.name,
+      brokerId: broker.id,
       title: `${broker.name} listing for ${name}`,
       url,
       snippet:

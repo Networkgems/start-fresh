@@ -259,6 +259,8 @@ function removalEl(caseId, r) {
       </div>
       <span class="status st-${r.status}">${STATUS_LABEL[r.status]}</span>
     </div>
+    ${r.guidance ? guidanceBlock(r.guidance) : ""}
+    ${r.takedown ? takedownBlock(r.takedown) : ""}
     ${actions}`;
 
   const advanceBtn = el.querySelector("[data-advance]");
@@ -266,6 +268,44 @@ function removalEl(caseId, r) {
   const rejectBtn = el.querySelector("[data-reject]");
   if (rejectBtn) rejectBtn.onclick = () => advance(caseId, r.id, "rejected");
   return el;
+}
+
+// Guided disconnect / de-link instructions for a social removal (STA-7).
+function guidanceBlock(g) {
+  const steps = g.steps
+    .map((s) => `<li>${escapeHtml(s)}</li>`)
+    .join("");
+  const controls = g.controls.length
+    ? `<div class="guide-links">${g.controls
+        .map(
+          (c) =>
+            `<a href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(c.label)} ↗</a>`,
+        )
+        .join("")}</div>`
+    : "";
+  return `
+    <details class="guide">
+      <summary>How to disconnect on ${escapeHtml(g.platform)}</summary>
+      <ol class="guide-steps">${steps}</ol>
+      ${controls}
+      <p class="guide-note">${escapeHtml(g.note)}</p>
+    </details>`;
+}
+
+// Generated image takedown request for an image removal (STA-6). Shows the
+// sanctioned channel and a pre-filled request the user reviews, copies, and
+// submits through that channel — we never auto-submit on their behalf.
+function takedownBlock(t) {
+  return `
+    <details class="guide">
+      <summary>Takedown request — ${escapeHtml(t.channel)}</summary>
+      <div class="guide-links">
+        <a href="${escapeHtml(t.channelUrl)}" target="_blank" rel="noopener noreferrer">Open ${escapeHtml(t.channel)} ↗</a>
+      </div>
+      <div class="guide-note"><strong>Subject:</strong> ${escapeHtml(t.subject)}</div>
+      <pre class="takedown-body">${escapeHtml(t.body)}</pre>
+      <p class="guide-note">Review and submit this through the linked channel. We don't auto-submit or impersonate you.</p>
+    </details>`;
 }
 
 async function advance(caseId, removalId, to) {

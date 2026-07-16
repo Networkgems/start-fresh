@@ -139,6 +139,33 @@ button:disabled { opacity: 0.5; cursor: default; }
 .steps { display: flex; gap: 0.4rem; margin-top: 0.6rem; flex-wrap: wrap; }
 .actions-row { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
 
+/* Social disconnect guidance (STA-7) */
+.guide { margin-top: 0.6rem; border-top: 1px solid var(--border); padding-top: 0.55rem; }
+.guide > summary {
+  cursor: pointer; font-size: 0.82rem; color: var(--accent-2); font-weight: 600;
+  list-style: none; user-select: none;
+}
+.guide > summary::-webkit-details-marker { display: none; }
+.guide > summary::before { content: "▸ "; color: var(--muted); }
+.guide[open] > summary::before { content: "▾ "; }
+.guide-steps { margin: 0.6rem 0 0.4rem; padding-left: 1.2rem; color: var(--text); font-size: 0.86rem; }
+.guide-steps li { margin-bottom: 0.35rem; }
+.guide-links { display: flex; gap: 0.4rem 0.9rem; flex-wrap: wrap; margin: 0.3rem 0; }
+.guide-links a { font-size: 0.82rem; }
+.guide-note { color: var(--muted); font-size: 0.78rem; margin: 0.5rem 0 0; }
+.takedown-body {
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.55rem 0.7rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 .empty { color: var(--muted); text-align: center; padding: 2rem 0; }
 .spinner { color: var(--muted); font-size: 0.9rem; }
 .back { cursor: pointer; color: var(--accent-2); font-size: 0.9rem; margin-bottom: 1rem; display: inline-block; }

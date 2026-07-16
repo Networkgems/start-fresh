@@ -66,8 +66,13 @@ export function apiRouter(): Router {
     if (name.length < 2 || name.length > 120) {
       return res.status(400).json({ error: "invalid_name" });
     }
+    // Optional source image for reverse-image lookup (STA-6). Only honored when a
+    // permitted reverse-image client is configured; ignored otherwise.
+    const rawImageUrl =
+      typeof req.body?.sourceImageUrl === "string" ? req.body.sourceImageUrl.trim() : "";
+    const sourceImageUrl = isHttpUrl(rawImageUrl) ? rawImageUrl : undefined;
     const caseId = randomUUID();
-    const report = await generateReport(name, caseId);
+    const report = await generateReport(name, caseId, { sourceImageUrl });
     const c = store.createCase(req.user!.id, name, report);
     const removals = deriveRemovals(report);
     return res.status(201).json({ case: c, report, removals });
@@ -115,4 +120,15 @@ export function apiRouter(): Router {
   });
 
   return router;
+}
+
+/** True for a well-formed http(s) URL — used to sanitize a submitted image URL. */
+function isHttpUrl(value: string): boolean {
+  if (!value) return false;
+  try {
+    const u = new URL(value);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
