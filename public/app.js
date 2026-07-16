@@ -259,6 +259,7 @@ function removalEl(caseId, r) {
       </div>
       <span class="status st-${r.status}">${STATUS_LABEL[r.status]}</span>
     </div>
+    ${r.optOut ? optOutBlock(r.optOut) : ""}
     ${r.guidance ? guidanceBlock(r.guidance) : ""}
     ${r.takedown ? takedownBlock(r.takedown) : ""}
     ${actions}`;
@@ -289,6 +290,24 @@ function guidanceBlock(g) {
       <ol class="guide-steps">${steps}</ol>
       ${controls}
       <p class="guide-note">${escapeHtml(g.note)}</p>
+    </details>`;
+}
+
+// Generated data-broker opt-out request for a data_broker removal (STA-5). Shows
+// the broker's published opt-out channel and a pre-filled request the user
+// reviews, copies, and submits there — we never auto-submit or impersonate them.
+function optOutBlock(o) {
+  const channelLink =
+    o.method === "email" && o.channelEmail
+      ? `<a href="mailto:${escapeHtml(o.channelEmail)}?subject=${encodeURIComponent(o.subject)}">Email ${escapeHtml(o.brokerName)} opt-out ↗</a>`
+      : `<a href="${escapeHtml(o.channelUrl)}" target="_blank" rel="noopener noreferrer">Open ${escapeHtml(o.brokerName)} opt-out ↗</a>`;
+  return `
+    <details class="guide">
+      <summary>Opt-out request — ${escapeHtml(o.brokerName)} (${o.method === "email" ? "email" : "web form"})</summary>
+      <div class="guide-links">${channelLink}</div>
+      <div class="guide-note"><strong>Subject:</strong> ${escapeHtml(o.subject)}</div>
+      <pre class="takedown-body">${escapeHtml(o.body)}</pre>
+      <p class="guide-note">Review and submit this through the broker's published opt-out channel. We don't auto-submit or impersonate you.</p>
     </details>`;
 }
 
