@@ -7,7 +7,9 @@ services:
     plan: starter
     region: oregon
     branch: main
-    buildCommand: npm ci && npm run build
+    # --include=dev: Render sets NODE_ENV=production, which would otherwise make
+    # npm skip devDependencies (TypeScript + @types/*) that the build needs.
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start
     healthCheckPath: /api/health
     autoDeploy: true
