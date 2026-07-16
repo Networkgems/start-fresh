@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Start Fresh — Dashboard</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><a href="/">Start Fresh</a></div>
+    <div class="user" id="userbar"></div>
+  </header>
+
+  <main class="wrap">
+    <!-- Auth view -->
+    <section id="auth-view" class="card hidden" style="max-width: 26rem; margin: 3rem auto;">
+      <h1 id="auth-title">Log in</h1>
+      <p class="sub" id="auth-sub">Access your reputation reports and removals.</p>
+      <div class="toggle">
+        <a id="tab-login">Log in</a>
+        <a id="tab-signup">Sign up</a>
+      </div>
+      <form id="auth-form">
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="email" required />
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" required minlength="8" />
+        <div class="error" id="auth-error"></div>
+        <button type="submit" id="auth-submit">Log in</button>
+      </form>
+    </section>
+
+    <!-- Dashboard view -->
+    <section id="dash-view" class="hidden">
+      <div class="card">
+        <h1>Start a new report</h1>
+        <p class="sub">Enter the name you want to clean up. We scan the open web and data brokers and build a removal plan.</p>
+        <form id="name-form" class="row">
+          <div class="grow">
+            <label for="subject">Full name</label>
+            <input id="subject" type="text" placeholder="e.g. Jane Doe" required />
+          </div>
+          <button type="submit" id="scan-btn">Run report</button>
+        </form>
+        <div class="error" id="name-error"></div>
+      </div>
+
+      <div class="card">
+        <h2>Your reports</h2>
+        <div id="cases-list"><div class="spinner">Loading…</div></div>
+      </div>
+    </section>
+
+    <!-- Case detail view -->
+    <section id="case-view" class="hidden">
+      <span class="back" id="back-btn">← Back to reports</span>
+      <div class="card">
+        <h1 id="case-name"></h1>
+        <p class="sub" id="case-summary"></p>
+        <div class="score">
+          <div class="num" id="score-num">—</div>
+          <div class="meta">
+            <div>Reputation score</div>
+            <div class="meter"><span id="score-bar"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Removal tracker</h2>
+        <p class="sub">Each item is actioned through a sanctioned opt-out / takedown channel. Advance the status as removals progress.</p>
+        <div id="removals-list"></div>
+      </div>
+
+      <div class="card">
+        <h2>Full findings</h2>
+        <div id="findings-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

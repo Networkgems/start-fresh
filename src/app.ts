@@ -1,7 +1,16 @@
 import express, { type Express, type Request, type Response } from "express";
+import cookieParser from "cookie-parser";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+import { attachUser } from "./auth.js";
+import { apiRouter } from "./routes.js";
 
 export const SERVICE_NAME = "start-fresh";
 export const VERSION = process.env.npm_package_version ?? "0.1.0";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// public/ sits at the repo root, one level above dist/ (or src/ in dev).
+const PUBLIC_DIR = path.resolve(__dirname, "..", "public");
 
 /**
  * Build the Express application.
@@ -14,6 +23,8 @@ export function createApp(): Express {
 
   app.disable("x-powered-by");
   app.use(express.json());
+  app.use(cookieParser());
+  app.use(attachUser);
 
   // Liveness/readiness probe — Render health check points here.
   app.get("/api/health", (_req: Request, res: Response) => {
@@ -25,7 +36,17 @@ export function createApp(): Express {
     });
   });
 
-  // Minimal hello-world landing page. Real UI lands in a later task.
+  // JSON API (auth, cases, reports, removals).
+  app.use("/api", apiRouter());
+
+  // The dashboard SPA.
+  app.get("/app", (_req: Request, res: Response) => {
+    res.sendFile(path.join(PUBLIC_DIR, "app.html"));
+  });
+
+  // Static assets (dashboard JS/CSS) and marketing landing page.
+  app.use(express.static(PUBLIC_DIR));
+
   app.get("/", (_req: Request, res: Response) => {
     res.status(200).type("html").send(landingPage());
   });
@@ -48,8 +69,10 @@ function landingPage(): string {
     main { max-width: 34rem; padding: 2.5rem; text-align: center; }
     h1 { font-size: 2.25rem; margin: 0 0 .5rem; letter-spacing: -.02em; }
     p { color: #a9b4cc; line-height: 1.6; }
-    .badge { display: inline-block; margin-top: 1.25rem; padding: .35rem .75rem;
-             border: 1px solid #2a3660; border-radius: 999px; color: #8fa0c8; font-size: .8rem; }
+    .cta { display: inline-block; margin-top: 1.5rem; padding: .7rem 1.4rem;
+           background: #4f7cff; color: #fff; border-radius: 10px; text-decoration: none;
+           font-weight: 600; }
+    .badge { display: block; margin-top: 1.5rem; color: #8fa0c8; font-size: .8rem; }
     a { color: #7aa2ff; }
   </style>
 </head>
@@ -58,7 +81,7 @@ function landingPage(): string {
     <h1>Start Fresh</h1>
     <p>Clear your name. Reclaim your privacy. We scan the open web and data brokers,
        build your reputation report, and run removals on your behalf.</p>
-    <p>Foundation is live. Product features are on the way.</p>
+    <a class="cta" href="/app">Get started</a>
     <span class="badge">v${VERSION} · <a href="/api/health">health</a></span>
   </main>
 </body>
