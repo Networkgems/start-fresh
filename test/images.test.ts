@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  buildCacheClearRequest,
   resolveImageTakedown,
   reverseImageFindings,
   reverseImageClientFromEnv,
@@ -76,6 +77,39 @@ describe("reverse-image discovery (STA-6)", () => {
   });
 });
 
+describe("Google cache-clear request (STA-14)", () => {
+  it("routes to Google's public Remove Outdated Content tool", () => {
+    const t = buildCacheClearRequest(
+      { url: "https://some-blog.example/old/pic.jpg" },
+      "Jane Doe",
+    );
+    expect(t.method).toBe("outdated_content");
+    expect(t.channel).toMatch(/Google/i);
+    expect(t.channel).toMatch(/cach/i);
+    expect(t.channelUrl).toContain("search.google.com/search-console/remove-outdated-content");
+    expect(t.targetUrl).toBe("https://some-blog.example/old/pic.jpg");
+  });
+
+  it("names the subject and the cached target url in the body", () => {
+    const t = buildCacheClearRequest(
+      { url: "https://images.example/jane.jpg" },
+      "Jane Doe",
+    );
+    expect(t.subject).toContain("Jane Doe");
+    expect(t.body).toContain("Jane Doe");
+    expect(t.body).toContain("https://images.example/jane.jpg");
+    // Must be honest that the tool only clears content already gone from source.
+    expect(t.body).toMatch(/removed or changed at the source|already gone|only clears/i);
+  });
+
+  it("never throws on a missing url and falls back to a host line", () => {
+    const t = buildCacheClearRequest({ url: undefined }, "Jane Doe");
+    expect(t.subject).toContain("Jane Doe");
+    expect(t.body).toMatch(/Host:/);
+    expect(t.channelUrl).toContain("search.google.com");
+  });
+});
+
 describe("image hit -> tracked takedown request (STA-6 success condition)", () => {
   it("a reverse-image hit becomes a tracked removal carrying a takedown request", async () => {
     const reverseImageClient: ReverseImageClient = {
@@ -103,5 +137,9 @@ describe("image hit -> tracked takedown request (STA-6 success condition)", () =
     expect(r.takedown!.body).toContain("Jane Doe");
     // The removal's channel label reflects the specific route, not the generic default.
     expect(r.channel).toBe(r.takedown!.channel);
+    // STA-14: every image removal also carries a Google cache-clear follow-up.
+    expect(r.cacheClear).toBeDefined();
+    expect(r.cacheClear!.method).toBe("outdated_content");
+    expect(r.cacheClear!.targetUrl).toBe(r.takedown!.targetUrl);
   });
 });

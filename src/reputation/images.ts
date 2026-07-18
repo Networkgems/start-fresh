@@ -211,6 +211,52 @@ export function resolveImageTakedown(
   };
 }
 
+// Google's PUBLIC "Remove Outdated Content" tool. Unlike Search Console removals
+// it needs no site ownership: anyone can ask Google to refresh/drop a cached page
+// or image thumbnail once the live source no longer shows that content. This is
+// the sanctioned channel for STA-14 ("clear Google cache image").
+const GOOGLE_OUTDATED_CONTENT_TOOL =
+  "https://search.google.com/search-console/remove-outdated-content";
+
+/**
+ * Generate a request to clear Google's CACHED copy of an image (its cached
+ * snapshot / Images thumbnail) via the public "Remove Outdated Content" tool
+ * (STA-14). This is the follow-up to `resolveImageTakedown`: once the image is
+ * gone or changed at its source, Google can still serve a stale cached copy, and
+ * this request asks Google to drop it. The tool only works when the live page no
+ * longer contains the image, so the body says so explicitly — we never ask Google
+ * to remove content that is still live (that is what the takedown channels are
+ * for), and we never auto-submit.
+ */
+export function buildCacheClearRequest(
+  finding: { url?: string },
+  subjectName: string,
+): TakedownRequest {
+  const host = hostOf(finding.url);
+  return {
+    channel: "Google — Remove Outdated Content (clear cached image)",
+    channelUrl: GOOGLE_OUTDATED_CONTENT_TOOL,
+    method: "outdated_content",
+    targetUrl: finding.url,
+    subject: `Clear cached image — ${subjectName}`,
+    body: [
+      `I am requesting that Google clear its CACHED copy of an image of me, ` +
+        `${subjectName}.`,
+      finding.url ? `Cached URL: ${finding.url}` : `Host: ${host}`,
+      ``,
+      `The image at this URL has been removed or changed at the source, but ` +
+        `Google is still serving a cached snapshot / Images thumbnail of the ` +
+        `old version. Please refresh your index and remove the outdated cached ` +
+        `image so it no longer appears in Search or Google Images.`,
+      ``,
+      `Submit this through Google's public "Remove Outdated Content" tool ` +
+        `(${GOOGLE_OUTDATED_CONTENT_TOOL}). Note: this tool only clears content ` +
+        `that is already gone from the live page — run the source takedown first ` +
+        `if the image is still live.`,
+    ].join("\n"),
+  };
+}
+
 function channelFor(host: string): ChannelSpec {
   if (GOOGLE_HOSTS.some((g) => host === g || host.endsWith(`.${g}`))) {
     return GOOGLE_CHANNEL;

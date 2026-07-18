@@ -7,7 +7,7 @@
 
 import { randomUUID } from "node:crypto";
 import { store } from "./store.js";
-import { resolveImageTakedown } from "./reputation/images.js";
+import { buildCacheClearRequest, resolveImageTakedown } from "./reputation/images.js";
 import { socialDisconnectFor } from "./reputation/social.js";
 import { brokerById } from "./reputation/brokers.js";
 import { buildOptOutRequest } from "./reputation/optout.js";
@@ -56,12 +56,16 @@ export function deriveRemovals(report: Report): Removal[] {
     // sanctioned channel (STA-6); the channel label reflects that specific
     // route rather than the generic category default.
     let takedown: TakedownRequest | undefined;
+    let cacheClear: TakedownRequest | undefined;
     let guidance: DisconnectGuidance | undefined;
     let optOut: OptOutRequest | undefined;
     let channel = CHANNEL[f.category];
     if (f.category === "image") {
       takedown = resolveImageTakedown(f, report.subjectName);
       channel = takedown.channel;
+      // Follow-up: clear Google's cached copy of the image once the source is
+      // removed/changed, via Google's public Remove Outdated Content tool (STA-14).
+      cacheClear = buildCacheClearRequest(f, report.subjectName);
     } else if (f.category === "social") {
       // Social findings become a tracked disconnect action with platform-specific
       // guided steps and links to the platform's published self-service controls
@@ -88,6 +92,7 @@ export function deriveRemovals(report: Report): Removal[] {
       channel,
       ...(optOut ? { optOut } : {}),
       ...(takedown ? { takedown } : {}),
+      ...(cacheClear ? { cacheClear } : {}),
       ...(guidance ? { guidance } : {}),
       status: "pending",
       history: [{ at: now, status: "pending", note: NOTE.pending }],

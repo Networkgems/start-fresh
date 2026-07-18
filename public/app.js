@@ -262,6 +262,7 @@ function removalEl(caseId, r) {
     ${r.optOut ? optOutBlock(r.optOut) : ""}
     ${r.guidance ? guidanceBlock(r.guidance) : ""}
     ${r.takedown ? takedownBlock(r.takedown) : ""}
+    ${r.cacheClear ? cacheClearBlock(r.cacheClear) : ""}
     ${actions}`;
 
   const advanceBtn = el.querySelector("[data-advance]");
@@ -324,6 +325,23 @@ function takedownBlock(t) {
       <div class="guide-note"><strong>Subject:</strong> ${escapeHtml(t.subject)}</div>
       <pre class="takedown-body">${escapeHtml(t.body)}</pre>
       <p class="guide-note">Review and submit this through the linked channel. We don't auto-submit or impersonate you.</p>
+    </details>`;
+}
+
+// Generated Google cache-clear request for an image removal (STA-14). Follows the
+// takedown: once the image is gone at the source, this clears Google's cached
+// copy / Images thumbnail via the public Remove Outdated Content tool. Same
+// review-and-submit contract — we never auto-submit on the user's behalf.
+function cacheClearBlock(t) {
+  return `
+    <details class="guide">
+      <summary>Clear Google's cached image — ${escapeHtml(t.channel)}</summary>
+      <div class="guide-links">
+        <a href="${escapeHtml(t.channelUrl)}" target="_blank" rel="noopener noreferrer">Open Google Remove Outdated Content ↗</a>
+      </div>
+      <div class="guide-note"><strong>Subject:</strong> ${escapeHtml(t.subject)}</div>
+      <pre class="takedown-body">${escapeHtml(t.body)}</pre>
+      <p class="guide-note">Do the source takedown first — this tool only clears images already removed from the live page. Review and submit it yourself; we don't auto-submit.</p>
     </details>`;
 }
 

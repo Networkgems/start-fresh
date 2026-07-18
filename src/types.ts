@@ -84,7 +84,8 @@ export interface DisconnectGuidance {
 export type TakedownMethod =
   | "web_form" // paste/submit into a published takedown/report form
   | "email" // send to a published abuse/legal contact
-  | "search_console"; // Google "Remove images of yourself" / de-index tool
+  | "search_console" // Google "Remove images of yourself" / de-index tool
+  | "outdated_content"; // Google "Remove Outdated Content" cache-clear tool
 
 /**
  * A ready-to-send takedown request generated for an image hit. This is the
@@ -156,6 +157,14 @@ export interface Removal {
    * Absent for categories that don't produce a per-item request payload.
    */
   takedown?: TakedownRequest;
+  /**
+   * For image removals: a follow-up request to clear Google's CACHED copy of the
+   * image (thumbnail / cached snapshot) via Google's public "Remove Outdated
+   * Content" tool (STA-14). The `takedown` above gets the image removed at its
+   * source (or suppressed in Search); this clears the stale copy Google keeps
+   * serving afterward. Absent for non-image removals.
+   */
+  cacheClear?: TakedownRequest;
   /**
    * For social removals: guided disconnect / de-link instructions plus links to
    * the platform's published self-service controls (STA-7). Absent for
