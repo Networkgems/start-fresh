@@ -41,6 +41,28 @@ describe("buildOptOutRequest — templated data-broker opt-out", () => {
   });
 });
 
+describe("broker registry — B2B / contact-data brokers", () => {
+  // These are the brokers the removal-ops sweep targets; each must resolve to its
+  // verified PUBLISHED opt-out channel so the workflow routes requests correctly.
+  const B2B: Array<[string, string, string]> = [
+    ["zoominfo", "ZoomInfo", "https://privacyrequest.zoominfo.com/remove/verify"],
+    ["signalhire", "SignalHire", "https://www.signalhire.com/opt-out"],
+    ["wiza", "Wiza", "https://wiza.co/optout-contact-info"],
+  ];
+
+  it.each(B2B)("registers %s with its published opt-out URL and generates a request", (id, name, optOutUrl) => {
+    const broker = brokerById(id);
+    expect(broker).toBeDefined();
+    expect(broker!.name).toBe(name);
+    expect(broker!.optOutUrl).toBe(optOutUrl);
+
+    const req = buildOptOutRequest(broker!, "Enock Etienne");
+    expect(req.channelUrl).toBe(optOutUrl);
+    expect(req.method).toBe("web_form");
+    expect(req.body).toContain("Enock Etienne");
+  });
+});
+
 describe("deriveRemovals — data-broker removals carry a submittable request", () => {
   it("attaches an opt-out request to every broker removal and can transition it to completion", async () => {
     const report = await generateReport("Data Subject", "case-optout", { searchClient: null });

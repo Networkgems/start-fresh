@@ -150,6 +150,34 @@ export const BROKER_DIRECTORY: readonly BrokerDirectory[] = [
     optOutMethod: "web_form",
     searchUrlTemplate: null,
   },
+  // B2B / contact-data brokers (expose work name, email, phone). These are the
+  // brokers the removal-ops sweep targets; their opt-outs are self-service forms
+  // that typically verify via an email code. No public consumer people-search
+  // URL pattern, so searchUrlTemplate is null.
+  {
+    id: "zoominfo",
+    name: "ZoomInfo",
+    homeUrl: "https://www.zoominfo.com",
+    optOutUrl: "https://privacyrequest.zoominfo.com/remove/verify",
+    optOutMethod: "web_form",
+    searchUrlTemplate: null,
+  },
+  {
+    id: "signalhire",
+    name: "SignalHire",
+    homeUrl: "https://www.signalhire.com",
+    optOutUrl: "https://www.signalhire.com/opt-out",
+    optOutMethod: "web_form",
+    searchUrlTemplate: null,
+  },
+  {
+    id: "wiza",
+    name: "Wiza",
+    homeUrl: "https://wiza.co",
+    optOutUrl: "https://wiza.co/optout-contact-info",
+    optOutMethod: "web_form",
+    searchUrlTemplate: null,
+  },
 ];
 
 /** Lookup a broker by its stable id. */
